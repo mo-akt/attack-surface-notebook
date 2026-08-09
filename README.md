@@ -8,17 +8,27 @@ This project aims to analyze OpenAPI specifications and extract useful security 
 
 ## Current Status
 
-Project initialization completed.
+The project currently provides a Python CLI for loading and inspecting OpenAPI JSON specifications.
 
-The current version contains the project structure and a basic CLI.
+Implemented functionality:
+
+- Load OpenAPI specifications from JSON files
+- Handle missing files and malformed JSON
+- Validate required OpenAPI fields
+- Extract HTTP methods and endpoint paths
+- Normalize HTTP methods
+- Ignore non-operation path fields such as `parameters`
+- Automated tests using pytest
+
+Current test suite: 12 tests passing.
 
 ## Planned Features
 
-- Load OpenAPI JSON files
-- Validate input
-- Parse endpoints
-- Detect authentication methods
-- Generate attack surface summary
+- Detect authentication methods and security schemes
+- Extract parameters and request metadata
+- Identify potentially sensitive endpoints
+- Generate an attack surface summary
+- Store analysis results
 - Export reports
 
 ## Ethical Use
