@@ -106,8 +106,39 @@ def analyze_endpoint_security(data):
             })
 
     return results
+def extract_parameters(data):
+    results = []
 
+    HTTP_METHODS = {
+        "get", "post", "put", "patch",
+        "delete", "head", "options", "trace"
+    }
+    merged_parameters = {}
 
+    for path, methods in data.get("paths", {}).items():
+        path_parameters = methods.get("parameters", [])
+
+        for method, operation in methods.items():
+            if method.lower() not in HTTP_METHODS:
+                continue
+            operation_parameters = operation.get("parameters", [])
+            merged_parameters = {}
+
+            for parameter in path_parameters:
+                key = (parameter.get("name"), parameter.get("in"))
+                merged_parameters[key] = parameter
+
+            for parameter in operation_parameters:
+                key = (parameter.get("name"), parameter.get("in"))
+                merged_parameters[key] = parameter
+
+            all_parameters = list(merged_parameters.values())
+            results.append({
+                   "method": method.upper(),
+                   "path": path,
+                   "parameters": all_parameters
+                   })
+    return results
 
 def main():
     print("Attack Surface Notebook")
@@ -136,6 +167,21 @@ def main():
             security_list = result.get("security", [])
             sec_str = ", ".join(security_list) if security_list else "No authentication requirement"
             print(f"{method} {path} -> {sec_str}")
+        
+        parameter_results = extract_parameters(data)
+
+        for result in parameter_results:
+           method = result.get("method", "")
+           path = result.get("path", "")
+           parameter_list = result.get("parameters", [])
+           print(f"{method} {path}")
+           for parameter in parameter_list:
+               name = parameter.get("name", "")
+               location = parameter.get("in", "")
+               if parameter.get("required", False): required ="required"
+               else :required="optional"
+            
+               print(f"-{name} [{location}] {required}")
 
 
     except FileNotFoundError:
