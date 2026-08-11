@@ -140,6 +140,44 @@ def extract_parameters(data):
                    })
     return results
 
+def tag_review_signals(method, path, parameters):
+    signals = []
+
+    normalized_path = path.lower()
+
+    if "user" in normalized_path or "account" in normalized_path:
+        signals.append("user-data")
+
+    if "admin" in normalized_path:
+        signals.append("admin-surface")
+
+    auth_keywords = ["login", "auth", "token", "password"]
+
+    if any(keyword in normalized_path for keyword in auth_keywords):
+        signals.append("authentication-related")
+
+    if method.upper() == "DELETE":
+        signals.append("destructive-operation")
+
+    sensitive_parameter_names = ["password","token","secret","api_key"]
+
+    for parameter in parameters:
+        parameter_name = parameter.get("name", "").lower()
+
+        if parameter_name in sensitive_parameter_names:
+            signals.append("sensitive-input")
+            break
+
+    return signals
+
+
+
+
+
+
+
+
+
 def main():
     print("Attack Surface Notebook")
     print("Version: 0.1.0")
@@ -170,18 +208,54 @@ def main():
         
         parameter_results = extract_parameters(data)
 
+        print("=======================")
+        print("Parameter Analysis")
+        print("=======================")
+        
         for result in parameter_results:
-           method = result.get("method", "")
-           path = result.get("path", "")
-           parameter_list = result.get("parameters", [])
-           print(f"{method} {path}")
-           for parameter in parameter_list:
-               name = parameter.get("name", "")
-               location = parameter.get("in", "")
-               if parameter.get("required", False): required ="required"
-               else :required="optional"
+            method = result.get("method", "")
+            path = result.get("path", "")
+            parameter_list = result.get("parameters", [])
+        
+            print(f"{method} {path}")
+        
+            for parameter in parameter_list:
+                name = parameter.get("name", "")
+                location = parameter.get("in", "")
+        
+                if parameter.get("required", False):
+                    required = "required"
+                else:
+                    required = "optional"
+        
+                print(f"- {name} [{location}] {required}")
+                print()
+        
+        
+        print("=======================")
+        print("Review Signals")
+        print("=======================")
+        
+        for result in parameter_results:
+            method = result.get("method", "")
+            path = result.get("path", "")
+            parameter_list = result.get("parameters", [])
+        
+            signals = tag_review_signals(
+                method,
+                path,
+                parameter_list
+            )
+            print()
+            print(f"{method} {path}")
             
-               print(f"-{name} [{location}] {required}")
+        
+            if signals:
+                for signal in signals:
+                    print(f"- {signal}")
+            else:
+                print("- No review signals")
+                
 
 
     except FileNotFoundError:

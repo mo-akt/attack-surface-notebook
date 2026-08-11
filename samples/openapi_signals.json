@@ -1,0 +1,44 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Review Signals Demo API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/admin/users/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "delete": {}
+    },
+    "/login": {
+      "post": {
+        "parameters": [
+          {
+            "name": "password",
+            "in": "query",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/account/token": {
+      "delete": {
+        "parameters": [
+          {
+            "name": "secret",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/health": {
+      "get": {}
+    }
+  }
+}
