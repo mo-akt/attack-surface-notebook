@@ -1,14 +1,6 @@
-# Attack Surface Notebook
-
-## Problem Statement
-
-Security engineers often need to inspect APIs and understand their attack surface before performing a security review.
-
-This project aims to analyze OpenAPI specifications and extract useful security information such as endpoints, authentication methods, and potential attack surface.
-
 ## Current Status
 
-The project currently provides a Python CLI for loading and inspecting OpenAPI JSON specifications.
+The project currently provides a Python CLI for loading, validating, and analyzing OpenAPI JSON specifications.
 
 Implemented functionality:
 
@@ -18,19 +10,19 @@ Implemented functionality:
 - Extract HTTP methods and endpoint paths
 - Normalize HTTP methods
 - Ignore non-operation path fields such as `parameters`
+- Extract defined security schemes
+- Detect HTTP Bearer and API key security schemes
+- Analyze authentication requirements for each API operation
+- Support global and operation-level security requirements
+- Identify operations with no authentication requirement
 - Automated tests using pytest
 
-Current test suite: 12 tests passing.
+Current test suite: 21 tests passing.
 
 ## Planned Features
 
-- Detect authentication methods and security schemes
 - Extract parameters and request metadata
 - Identify potentially sensitive endpoints
 - Generate an attack surface summary
 - Store analysis results
 - Export reports
-
-## Ethical Use
-
-This project is intended only for defensive security, education, and authorized security assessments.
