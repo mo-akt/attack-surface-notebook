@@ -1,4 +1,10 @@
 import json
+from src.database import (
+    connect_database,
+    create_tables,
+    save_analysis_result,
+)
+
 def load_openapi(path):
     with open(path, 'r', encoding='utf-8') as file:
          data = json.load(file)
@@ -113,8 +119,6 @@ def extract_parameters(data):
         "get", "post", "put", "patch",
         "delete", "head", "options", "trace"
     }
-    merged_parameters = {}
-
     for path, methods in data.get("paths", {}).items():
         path_parameters = methods.get("parameters", [])
 
@@ -170,105 +174,175 @@ def tag_review_signals(method, path, parameters):
 
     return signals
 
+def build_analysis_results(data):
+    endpoints = parse_endpoints(data)
+    security_results = analyze_endpoint_security(data)
+    parameter_results = extract_parameters(data)
 
+    security_map = {
+        (result["method"], result["path"]): result.get("security", [])
+        for result in security_results
+    }
 
+    parameter_map = {
+        (result["method"], result["path"]): result.get("parameters", [])
+        for result in parameter_results
+    }
 
+    results = []
 
+    for endpoint in endpoints:
+        method = endpoint["method"]
+        path = endpoint["path"]
+        key = (method, path)
 
+        security = security_map.get(key, [])
+        parameters = parameter_map.get(key, [])
 
+        signals = tag_review_signals(
+            method,
+            path,
+            parameters
+        )
 
+        results.append({
+            "method": method,
+            "path": path,
+            "security": security,
+            "parameters": parameters,
+            "signals": signals
+        })
+
+    return results
 
 def main():
     print("Attack Surface Notebook")
     print("Version: 0.1.0")
 
     path = input("Enter OpenAPI file path: ").strip()
+
     try:
-        data=load_openapi(path)
-        
+        data = load_openapi(path)
         validate_openapi(data)
 
         title = data["info"]["title"]
         version = data["info"]["version"]
-        endpoints=parse_endpoints(data)
 
+        endpoints = parse_endpoints(data)
         endpoints_count = len(endpoints)
+
         print(f"API Title : {title}")
         print(f"Version   : {version}")
         print(f"Endpoints : {endpoints_count}")
+
+        print("=======================")
+        print("Endpoints")
+        print("=======================")
+
         for endpoint in endpoints:
             print(endpoint["method"], endpoint["path"])
+
         security_results = analyze_endpoint_security(data)
+
+        print("=======================")
+        print("Authentication Analysis")
+        print("=======================")
+
         for result in security_results:
             method = result.get("method", "")
             path = result.get("path", "")
             security_list = result.get("security", [])
-            sec_str = ", ".join(security_list) if security_list else "No authentication requirement"
+
+            sec_str = (
+                ", ".join(security_list)
+                if security_list
+                else "No authentication requirement"
+            )
+
             print(f"{method} {path} -> {sec_str}")
-        
+
         parameter_results = extract_parameters(data)
 
         print("=======================")
         print("Parameter Analysis")
         print("=======================")
-        
+
         for result in parameter_results:
             method = result.get("method", "")
             path = result.get("path", "")
             parameter_list = result.get("parameters", [])
-        
+
             print(f"{method} {path}")
-        
+
             for parameter in parameter_list:
                 name = parameter.get("name", "")
                 location = parameter.get("in", "")
-        
+
                 if parameter.get("required", False):
                     required = "required"
                 else:
                     required = "optional"
-        
+
                 print(f"- {name} [{location}] {required}")
-                print()
-        
-        
+
+            print()
+
         print("=======================")
         print("Review Signals")
         print("=======================")
-        
+
         for result in parameter_results:
             method = result.get("method", "")
             path = result.get("path", "")
             parameter_list = result.get("parameters", [])
-        
+
             signals = tag_review_signals(
                 method,
                 path,
                 parameter_list
             )
-            print()
+
             print(f"{method} {path}")
-            
-        
+
             if signals:
                 for signal in signals:
                     print(f"- {signal}")
             else:
                 print("- No review signals")
-                
 
+            print()
+
+        # Build unified analysis results
+        analysis_results = build_analysis_results(data)
+
+        # Save results to SQLite
+        conn = connect_database("attack_surface.db")
+        cursor = conn.cursor()
+
+        create_tables(cursor)
+
+        for result in analysis_results:
+            save_analysis_result(cursor, result)
+
+        conn.commit()
+        conn.close()
+
+        print("=======================")
+        print("Persistence")
+        print("=======================")
+        print("Analysis saved to attack_surface.db")
 
     except FileNotFoundError:
         print("File not found.")
+
     except json.JSONDecodeError:
         print("JSON Decode Error.")
+
     except KeyError as e:
         print(f"Missing required field: {e}")
+
     except ValueError as e:
         print(e)
-
-
-
 
 if __name__ == "__main__":
     main()
