@@ -38,8 +38,12 @@ Implemented functionality:
 - Relational storage for authentication requirements, parameters, and review signals
 - Duplicate-safe endpoint and analysis storage
 - Foreign key relationships between endpoints and analysis data
+- Generate Markdown attack surface analysis reports
+- Report endpoint authentication, parameters, and review signals
+- Clearly separate heuristic review signals from confirmed security findings
+- Save generated reports to Markdown files
 
-Current test suite: 45 tests passing.
+Current test suite: 48 tests passing.
 
 ### SQLite Persistence
 
@@ -63,8 +67,8 @@ Review signals are heuristic indicators intended to help prioritize manual secur
 They do not represent confirmed vulnerabilities. A signal such as `admin-surface`, `sensitive-input`, or `destructive-operation` indicates that an endpoint may deserve additional review, but further evidence is required before making a security finding.
 
 ## Planned Features
-- Generate an attack surface summary
-- Export Markdown and HTML reports
+
+- Export HTML reports
 - Compare two API versions and identify newly introduced attack surface
 - Generate a threat-model worksheet
 - Add HAR file support

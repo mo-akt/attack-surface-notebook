@@ -2,8 +2,10 @@ import json
 from src.database import (
     connect_database,
     create_tables,
-    save_analysis_result,
-)
+    save_analysis_result,)
+from src.report import (
+    generate_markdown_report,
+    save_markdown_report,)
 
 def load_openapi(path):
     with open(path, 'r', encoding='utf-8') as file:
@@ -331,6 +333,9 @@ def main():
         print("Persistence")
         print("=======================")
         print("Analysis saved to attack_surface.db")
+        report_text = generate_markdown_report(title,version,analysis_results)
+        save_markdown_report(report_text,"attack_surface_report.md")
+        print("Report saved to attack_surface_report.md")
 
     except FileNotFoundError:
         print("File not found.")

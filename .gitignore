@@ -3,3 +3,4 @@ __pycache__/
 __pycache__/
 *.pyc
 *.db
+attack_surface_report.md
