@@ -3,5 +3,6 @@ __pycache__/
 __pycache__/
 *.pyc
 *.db
+.pytest_cache/
 attack_surface_report.md
 api_comparison_report.md

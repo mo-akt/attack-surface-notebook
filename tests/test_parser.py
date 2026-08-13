@@ -1,3 +1,4 @@
+import pytest
 from src.cli import parse_endpoints
 
 def test_single_get_endpoint():
@@ -69,3 +70,19 @@ def test_uppercase_get_endpoint():
     assert result == [
         {"method": "GET", "path": "/users"}
     ]
+
+
+def test_parse_endpoints_handles_non_object_path_item():
+    data = {
+        "info": {
+            "title": "Broken API",
+            "version": "1.0.0"
+        },
+        "paths": {
+            "/users": []
+        }
+    }
+
+    endpoints = parse_endpoints(data)
+
+    assert endpoints == []

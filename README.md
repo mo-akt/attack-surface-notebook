@@ -37,8 +37,12 @@ Implemented functionality:
 - Infer assets, potential threats, security assumptions, and review questions from available analysis evidence
 - Avoid confirmed vulnerability claims without runtime evidence
 - Automated testing using pytest
+- Harden OpenAPI input validation against malformed structures
+- Handle partial and minimal analysis metadata safely
+- Test threat-model inference against duplicate and incomplete inputs
+- Test report generation with empty and minimal analysis results
 
-Current test suite: 63 tests passing.
+Current test suite: 80 tests passing.
 
 ## Architecture
 
@@ -267,7 +271,7 @@ python -m pytest
 Current test suite:
 
 ```text
-63 tests passing
+80 tests passing
 ```
 
 Tests cover:
@@ -285,6 +289,19 @@ Tests cover:
 - Threat-model report output
 - Conservative handling of authentication-related endpoints
 - Context-aware authorization review questions
+- Malformed OpenAPI structure validation
+- Partial and minimal analysis metadata
+- Duplicate review-signal handling
+- Empty and minimal report generation
+
+## Example Outputs
+
+Sanitized example outputs are available in:
+
+- `docs/sample_attack_surface_report.md`
+- `docs/sample_comparison_report.md`
+
+These examples demonstrate the analysis, review-signal, threat-model, and API-version-comparison output without representing confirmed vulnerabilities.
 
 ## Known Limitations
 

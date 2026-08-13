@@ -164,3 +164,66 @@ def test_generate_threat_model_section_handles_empty_input():
 
     assert "## Threat Model Worksheet" in output
     assert "_No threat-model entries generated._" in output
+
+def test_generate_markdown_report_handles_empty_analysis_results():
+    report = generate_markdown_report(
+        "Empty API",
+        "1.0.0",
+        []
+    )
+
+    assert "# Attack Surface Analysis Report" in report
+    assert "- API: Empty API" in report
+    assert "- Version: 1.0.0" in report
+    assert "- Endpoints: 0" in report
+    assert "## Endpoint Analysis" in report
+    assert "## Limitations" in report
+
+
+def test_generate_markdown_report_handles_minimal_endpoint():
+    analysis_results = [
+        {
+            "method": "GET",
+            "path": "/health",
+            "security": [],
+            "parameters": [],
+            "signals": []
+        }
+    ]
+
+    report = generate_markdown_report(
+        "Minimal API",
+        "1.0.0",
+        analysis_results
+    )
+
+    assert "### GET /health" in report
+    assert (
+        "- No authentication requirement is declared "
+        "in the OpenAPI specification."
+    ) in report
+    assert "- None declared" in report
+    assert "**Review Signals**" in report
+    assert "- None" in report
+
+
+def test_generate_threat_model_section_handles_operation_without_inferences():
+    threat_model = [
+        {
+            "method": "GET",
+            "path": "/health",
+            "assets": [],
+            "threats": [],
+            "security_assumptions": [],
+            "review_questions": []
+        }
+    ]
+
+    output = generate_threat_model_section(threat_model)
+
+    assert "## Threat Model Worksheet" in output
+    assert "### GET /health" in output
+    assert "- None inferred" in output
+    assert "- None inferred from current analysis evidence" in output
+    assert "**Security Assumptions**" in output
+    assert "**Review Questions**" in output

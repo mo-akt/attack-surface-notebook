@@ -19,23 +19,106 @@ def load_openapi(path):
 
 def validate_openapi(data):
     """
-    Validates that the provided dictionary contains the minimum required fields for an OpenAPI document.
-    Raises ValueError with a specific message if a field is missing, otherwise returns True.
+    Validate the minimum structure required by this project.
+
+    Raises ValueError when required fields are missing
+    or when supported OpenAPI structures have invalid types.
     """
-    # Check if the root level fields exist
+
+    HTTP_METHODS = {
+        "get",
+        "post",
+        "put",
+        "patch",
+        "delete",
+        "head",
+        "options",
+        "trace",
+    }
+
+    if not isinstance(data, dict):
+        raise ValueError("OpenAPI document must be an object")
+
     if "info" not in data:
         raise ValueError("Missing required field: info")
-        
+
     if "paths" not in data:
         raise ValueError("Missing required field: paths")
-        
-    # Check if nested required fields inside 'info' exist
+
+    if not isinstance(data["info"], dict):
+        raise ValueError("Invalid field type: info must be an object")
+
+    if not isinstance(data["paths"], dict):
+        raise ValueError("Invalid field type: paths must be an object")
+
     if "title" not in data["info"]:
         raise ValueError("Missing required field: info.title")
-        
+
     if "version" not in data["info"]:
         raise ValueError("Missing required field: info.version")
-        
+
+    for path, path_item in data["paths"].items():
+        if not isinstance(path, str):
+            raise ValueError("Invalid path key: path must be a string")
+
+        if not isinstance(path_item, dict):
+            raise ValueError(
+                f"Invalid path item type: {path} must be an object"
+            )
+
+        path_parameters = path_item.get("parameters", [])
+
+        if not isinstance(path_parameters, list):
+            raise ValueError(
+                f"Invalid parameters type: {path} parameters must be an array"
+            )
+
+        for parameter in path_parameters:
+            if not isinstance(parameter, dict):
+                raise ValueError(
+                    f"Invalid parameter definition in {path}: "
+                    "parameter must be an object"
+                )
+
+        for method, operation in path_item.items():
+            if method.lower() not in HTTP_METHODS:
+                continue
+
+            if not isinstance(operation, dict):
+                raise ValueError(
+                    f"Invalid operation type: "
+                    f"{method.upper()} {path} must be an object"
+                )
+
+            operation_parameters = operation.get("parameters", [])
+
+            if not isinstance(operation_parameters, list):
+                raise ValueError(
+                    f"Invalid parameters type: "
+                    f"{method.upper()} {path} parameters must be an array"
+                )
+
+            for parameter in operation_parameters:
+                if not isinstance(parameter, dict):
+                    raise ValueError(
+                        f"Invalid parameter definition in "
+                        f"{method.upper()} {path}: "
+                        "parameter must be an object"
+                    )
+
+            if "security" in operation:
+                if not isinstance(operation["security"], list):
+                    raise ValueError(
+                        f"Invalid security type: "
+                        f"{method.upper()} {path} security must be an array"
+                    )
+
+    if "security" in data:
+        if not isinstance(data["security"], list):
+            raise ValueError(
+                "Invalid field type: security must be an array"
+            )
+
     return True
 
 def extract_security_schemes(data):
