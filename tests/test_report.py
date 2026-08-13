@@ -2,6 +2,7 @@ from src.report import (
     generate_markdown_report,
     save_markdown_report,
     generate_comparison_section,
+    generate_threat_model_section,
 )
 
 def test_generate_markdown_report_with_endpoint_analysis():
@@ -108,6 +109,7 @@ def test_generate_comparison_section():
 
     assert "### Unchanged Operations" in markdown_output
     assert "- GET /health" in markdown_output
+
 def test_generate_comparison_section_handles_empty_results():
     empty_result = {
         "added": [],
@@ -127,3 +129,38 @@ def test_generate_comparison_section_handles_empty_results():
 
     assert "### Unchanged Operations" in markdown_output
     assert "_No unchanged endpoints._" in markdown_output
+
+def test_generate_threat_model_section():
+    threat_model = [
+        {
+            "method": "GET",
+            "path": "/users/{id}",
+            "assets": ["User/account data"],
+            "threats": [
+                "A caller may attempt to access another user's object."
+            ],
+            "security_assumptions": [
+                "The backend enforces object-level authorization."
+            ],
+            "review_questions": [
+                "Can User A access User B's object by changing the identifier?"
+            ],
+        }
+    ]
+
+    output = generate_threat_model_section(threat_model)
+
+    assert "## Threat Model Worksheet" in output
+    assert "### GET /users/{id}" in output
+    assert "User/account data" in output
+    assert "another user's object" in output
+    assert "object-level authorization" in output
+    assert "Can User A access User B" in output
+    assert "Threat Model Limitations" in output
+
+
+def test_generate_threat_model_section_handles_empty_input():
+    output = generate_threat_model_section([])
+
+    assert "## Threat Model Worksheet" in output
+    assert "_No threat-model entries generated._" in output

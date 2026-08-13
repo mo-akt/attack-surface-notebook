@@ -110,10 +110,77 @@ def generate_comparison_section(comparison_result):
     lines.append("")
     lines.append("### Unchanged Operations")
     lines.append("")
-
     if unchanged:
         lines.extend(unchanged)
     else:
         lines.append("_No unchanged endpoints._")
+
+    return "\n".join(lines)
+
+def generate_threat_model_section(threat_model):
+    lines = []
+
+    lines.append("## Threat Model Worksheet")
+    lines.append("")
+
+    if not threat_model:
+        lines.append("_No threat-model entries generated._")
+        return "\n".join(lines)
+
+    for operation in threat_model:
+        method = operation.get("method", "")
+        path = operation.get("path", "")
+
+        assets = operation.get("assets", [])
+        threats = operation.get("threats", [])
+        assumptions = operation.get("security_assumptions", [])
+        questions = operation.get("review_questions", [])
+
+        lines.append(f"### {method} {path}")
+        lines.append("")
+
+        lines.append("**Assets**")
+        lines.append("")
+        if assets:
+            for asset in assets:
+                lines.append(f"- {asset}")
+        else:
+            lines.append("- None inferred")
+
+        lines.append("")
+        lines.append("**Potential Threats**")
+        lines.append("")
+        if threats:
+            for threat in threats:
+                lines.append(f"- {threat}")
+        else:
+            lines.append("- None inferred from current analysis evidence")
+
+        lines.append("")
+        lines.append("**Security Assumptions**")
+        lines.append("")
+        if assumptions:
+            for assumption in assumptions:
+                lines.append(f"- {assumption}")
+        else:
+            lines.append("- None")
+
+        lines.append("")
+        lines.append("**Review Questions**")
+        lines.append("")
+        if questions:
+            for question in questions:
+                lines.append(f"- {question}")
+        else:
+            lines.append("- None")
+
+        lines.append("")
+
+    lines.append("### Threat Model Limitations")
+    lines.append("")
+    lines.append(
+        "Threat scenarios and review questions are generated from available "
+        "OpenAPI analysis evidence and do not represent confirmed vulnerabilities."
+    )
 
     return "\n".join(lines)

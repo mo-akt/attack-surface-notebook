@@ -2,21 +2,21 @@
 
 A Python-based security analysis tool for mapping API attack surfaces from OpenAPI specifications.
 
-It extracts endpoints, authentication requirements, parameters, and explainable security review signals, stores structured analysis results in SQLite, generates Markdown reports, and compares API versions to identify newly introduced attack surface.
+It extracts endpoints, authentication requirements, parameters, and explainable security review signals, stores structured analysis results in SQLite, generates Markdown reports, compares API versions, and produces threat-model worksheets for manual security review.
 
-> Review signals are heuristic indicators for prioritizing manual security review. They are not confirmed vulnerabilities.
+> Review signals and threat scenarios are heuristic indicators for prioritizing manual security review. They are not confirmed vulnerabilities.
 
 ## Problem Statement
 
 Security engineers often need to inspect APIs and understand their attack surface before performing a security review.
 
-This project analyzes OpenAPI specifications and extracts structured security-relevant information such as endpoints, authentication requirements, parameters, review signals, and API version changes.
+This project analyzes OpenAPI specifications and extracts structured security-relevant information such as endpoints, authentication requirements, parameters, review signals, API version changes, and threat-model review questions.
 
 The goal is to support manual security review with organized evidence, not to claim automatic vulnerability discovery.
 
 ## Current Status
 
-The project currently provides a Python CLI for loading, validating, analyzing, storing, reporting, and comparing OpenAPI JSON specifications.
+The project currently provides a Python CLI for loading, validating, analyzing, storing, reporting, comparing, and threat-modeling OpenAPI JSON specifications.
 
 Implemented functionality:
 
@@ -33,9 +33,12 @@ Implemented functionality:
 - Compare two OpenAPI versions using HTTP method and path identity
 - Detect added, removed, and unchanged API operations
 - Generate Markdown API version comparison reports
+- Generate structured API threat-model worksheets
+- Infer assets, potential threats, security assumptions, and review questions from available analysis evidence
+- Avoid confirmed vulnerability claims without runtime evidence
 - Automated testing using pytest
 
-Current test suite: 54 tests passing.
+Current test suite: 63 tests passing.
 
 ## Architecture
 
@@ -50,6 +53,17 @@ flowchart TD
 
     C --> G[SQLite Persistence]
     C --> H[Markdown Report]
+    C --> P[Threat Model]
+
+    P --> Q[Assets]
+    P --> R[Potential Threats]
+    P --> S[Security Assumptions]
+    P --> T[Review Questions]
+
+    Q --> U[Threat Model Worksheet]
+    R --> U
+    S --> U
+    T --> U
 
     I[OpenAPI V1] --> J[API Version Comparison]
     K[OpenAPI V2] --> J
@@ -59,6 +73,7 @@ flowchart TD
     J --> N[Unchanged Operations]
 
     J --> O[Comparison Report]
+```
 
 ## SQLite Persistence
 
@@ -95,9 +110,47 @@ The project generates Markdown reports containing:
 - Authentication requirements
 - Parameter metadata
 - Review signals
+- Threat-model worksheet
 - Analysis limitations
 
-The reports distinguish heuristic review signals from confirmed security findings.
+The reports distinguish heuristic review signals and potential threats from confirmed security findings.
+
+## Threat Model Worksheet
+
+The analysis workflow can generate a structured threat-model worksheet for each API operation.
+
+The worksheet may contain:
+
+- Assets
+- Potential threats
+- Security assumptions
+- Review questions
+
+Threat-model content is generated conservatively from available OpenAPI analysis evidence.
+
+For example:
+
+```text
+Operation:
+POST /admin/users
+
+Assets:
+- User/account data
+- Administrative capabilities
+
+Potential Threat:
+- A lower-privileged authenticated user may attempt to invoke an administrative operation.
+
+Security Assumption:
+- Administrative operations require appropriate administrative authorization.
+
+Review Question:
+- Can a non-admin authenticated user successfully invoke POST /admin/users?
+```
+
+Threat scenarios are questions about what could go wrong. They are not confirmed vulnerabilities.
+
+Runtime evidence and authorized testing are required before documenting a confirmed security finding.
 
 ## API Version Comparison
 
@@ -163,6 +216,10 @@ Observation
     ↓
 Review Signal / Heuristic
     ↓
+Threat / Review Question
+    ↓
+Authorized Testing + Evidence
+    ↓
 Confirmed Finding
 ```
 
@@ -183,7 +240,17 @@ The CLI provides two modes:
 
 ### Analyze API
 
-This mode analyzes one OpenAPI specification, stores structured results in SQLite, and generates a Markdown attack surface report.
+This mode analyzes one OpenAPI specification.
+
+It currently:
+
+- Parses API operations
+- Analyzes authentication requirements
+- Extracts parameters
+- Generates review signals
+- Stores structured analysis results in SQLite
+- Generates a threat-model worksheet
+- Generates a Markdown attack surface report
 
 ### Compare API Versions
 
@@ -200,24 +267,43 @@ python -m pytest
 Current test suite:
 
 ```text
-54 tests passing
+63 tests passing
 ```
 
-Tests cover the main parsing, validation, security analysis, persistence, reporting, and API comparison functionality.
+Tests cover:
+
+- OpenAPI loading and validation
+- Endpoint parsing
+- Authentication analysis
+- Parameter inheritance and overrides
+- Review signal generation
+- SQLite persistence
+- Markdown report generation
+- API version comparison
+- Comparison report generation
+- Threat-model generation
+- Threat-model report output
+- Conservative handling of authentication-related endpoints
+- Context-aware authorization review questions
 
 ## Known Limitations
 
 - OpenAPI documentation may not reflect the application's actual runtime security controls.
 - Missing authentication declarations do not prove that an endpoint is unauthenticated in production.
-- Review signals are heuristic and require manual validation.
+- Review signals and threat scenarios are heuristic and require manual validation.
+- Threat-model generation is based only on currently available analysis evidence and may miss application-specific context.
+- The current threat model does not represent confirmed vulnerabilities.
+- Some intentionally public endpoints may still generate low-value authentication review questions.
 - API version comparison currently focuses on HTTP method and path changes.
 - Changes to request bodies, schemas, authentication requirements, and parameter definitions are not yet included in version comparison.
+- Runtime authorization behavior cannot be proven from an OpenAPI specification alone.
 
 ## Planned Features
 
 - Export HTML reports
-- Generate a threat-model worksheet
 - Add HAR file support
+- Improve context-aware threat-model inference
+- Extend API version comparison beyond method and path changes
 
 ## Ethical Use
 

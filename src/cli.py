@@ -6,9 +6,11 @@ from src.database import (
 from src.report import (
     generate_markdown_report,
     save_markdown_report,
-    generate_comparison_section,)
+    generate_comparison_section,
+    generate_threat_model_section,)
 from src.parser import parse_endpoints
 from src.comparison import compare_api_versions
+from src.threat_model import build_threat_model
 
 def load_openapi(path):
     with open(path, 'r', encoding='utf-8') as file:
@@ -244,6 +246,8 @@ def run_comparison_mode():
 
 def run_analysis_mode():
     try:
+        path = input("Enter OpenAPI file path: ").strip()
+
         data = load_openapi(path)
         validate_openapi(data)
 
@@ -337,7 +341,28 @@ def run_analysis_mode():
         # Build unified analysis results
         analysis_results = build_analysis_results(data)
 
-        # Save results to SQLite
+        # Build threat-model worksheet
+        threat_model = build_threat_model(analysis_results)
+
+        # Generate the main Markdown report
+        report = generate_markdown_report(
+            title,
+            version,
+            analysis_results
+        )
+
+        # Append the threat-model worksheet
+        report += "\n\n" + generate_threat_model_section(
+            threat_model
+        )
+
+        # Save the complete report once
+        save_markdown_report(
+            report,
+            "attack_surface_report.md"
+        )
+
+        # Persist analysis results
         conn = connect_database("attack_surface.db")
         cursor = conn.cursor()
 
@@ -353,8 +378,6 @@ def run_analysis_mode():
         print("Persistence")
         print("=======================")
         print("Analysis saved to attack_surface.db")
-        report_text = generate_markdown_report(title,version,analysis_results)
-        save_markdown_report(report_text,"attack_surface_report.md")
         print("Report saved to attack_surface_report.md")
 
     except FileNotFoundError:
