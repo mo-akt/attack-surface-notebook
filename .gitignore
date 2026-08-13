@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 *.db
 attack_surface_report.md
+api_comparison_report.md

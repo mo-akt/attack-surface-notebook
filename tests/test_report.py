@@ -1,7 +1,9 @@
 from src.report import (
     generate_markdown_report,
     save_markdown_report,
+    generate_comparison_section,
 )
+
 def test_generate_markdown_report_with_endpoint_analysis():
     analysis_results = [
         {
@@ -83,3 +85,45 @@ def test_save_markdown_report(tmp_path):
 
     assert output_path.exists()
     assert output_path.read_text(encoding="utf-8") == report_text
+
+def test_generate_comparison_section():
+    mock_result = {
+        "added": [{"method": "POST", "path": "/admin/users"}],
+        "removed": [{"method": "DELETE", "path": "/legacy"}],
+        "unchanged": [
+            {"method": "GET", "path": "/health"},
+            {"method": "GET", "path": "/users"},
+            {"method": "POST", "path": "/login"}
+        ]
+    }
+
+    markdown_output = generate_comparison_section(mock_result)
+
+    assert "## API Version Comparison" in markdown_output
+    assert "### Newly Introduced Attack Surface" in markdown_output
+    assert "- POST /admin/users" in markdown_output
+
+    assert "### Removed Attack Surface" in markdown_output
+    assert "- DELETE /legacy" in markdown_output
+
+    assert "### Unchanged Operations" in markdown_output
+    assert "- GET /health" in markdown_output
+def test_generate_comparison_section_handles_empty_results():
+    empty_result = {
+        "added": [],
+        "removed": [],
+        "unchanged": []
+    }
+
+    markdown_output = generate_comparison_section(empty_result)
+
+    assert "## API Version Comparison" in markdown_output
+
+    assert "### Newly Introduced Attack Surface" in markdown_output
+    assert "_No new endpoints added._" in markdown_output
+
+    assert "### Removed Attack Surface" in markdown_output
+    assert "_No endpoints were removed._" in markdown_output
+
+    assert "### Unchanged Operations" in markdown_output
+    assert "_No unchanged endpoints._" in markdown_output

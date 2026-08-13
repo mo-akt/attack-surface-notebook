@@ -1,0 +1,29 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Test API V2",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Get all users"
+      }
+    },
+    "/login": {
+      "post": {
+        "summary": "User login"
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check"
+      }
+    },
+    "/admin/users": {
+      "post": {
+        "summary": "Create admin user"
+      }
+    }
+  }
+}

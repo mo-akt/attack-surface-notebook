@@ -2,54 +2,69 @@
 
 A Python-based security analysis tool for mapping API attack surfaces from OpenAPI specifications.
 
-It extracts endpoints, authentication requirements, parameters, and explainable security review signals, and stores structured analysis results in SQLite for further security review and reporting.
+It extracts endpoints, authentication requirements, parameters, and explainable security review signals, stores structured analysis results in SQLite, generates Markdown reports, and compares API versions to identify newly introduced attack surface.
 
 > Review signals are heuristic indicators for prioritizing manual security review. They are not confirmed vulnerabilities.
 
+## Problem Statement
+
+Security engineers often need to inspect APIs and understand their attack surface before performing a security review.
+
+This project analyzes OpenAPI specifications and extracts structured security-relevant information such as endpoints, authentication requirements, parameters, review signals, and API version changes.
+
+The goal is to support manual security review with organized evidence, not to claim automatic vulnerability discovery.
+
 ## Current Status
 
-The project currently provides a Python CLI for loading, validating, and analyzing OpenAPI JSON specifications.
+The project currently provides a Python CLI for loading, validating, analyzing, storing, reporting, and comparing OpenAPI JSON specifications.
 
 Implemented functionality:
 
-- Load OpenAPI specifications from JSON files
-- Handle missing files and malformed JSON
-- Validate required OpenAPI fields
+- Load and validate OpenAPI JSON specifications
 - Extract HTTP methods and endpoint paths
-- Normalize HTTP methods
-- Ignore non-operation path fields such as `parameters`
-- Extract defined security schemes
-- Detect HTTP Bearer and API key security schemes
-- Analyze authentication requirements for each API operation
+- Analyze authentication requirements
 - Support global and operation-level security requirements
-- Identify operations with no authentication requirement
-- Automated tests using pytest
 - Extract path-level and operation-level parameters
-- Support path, query, header, and cookie parameter metadata
-- Merge inherited path-level parameters with operation-level parameters
-- Support operation-level parameter overrides
-- Display parameter location and required/optional status in the CLI
+- Merge inherited parameters and support operation-level overrides
 - Tag endpoints with explainable security review signals
-- Identify user/account-related and admin-related API surfaces
-- Identify authentication-related paths and sensitive input names
-- Flag destructive HTTP operations for additional review
-- Support multiple review signals per endpoint
-- SQLite persistence for analyzed API endpoints
-- Relational storage for authentication requirements, parameters, and review signals
-- Duplicate-safe endpoint and analysis storage
-- Foreign key relationships between endpoints and analysis data
+- Store endpoints, authentication requirements, parameters, and review signals in SQLite
+- Prevent duplicate analysis records
 - Generate Markdown attack surface analysis reports
-- Report endpoint authentication, parameters, and review signals
-- Clearly separate heuristic review signals from confirmed security findings
-- Save generated reports to Markdown files
+- Compare two OpenAPI versions using HTTP method and path identity
+- Detect added, removed, and unchanged API operations
+- Generate Markdown API version comparison reports
+- Automated testing using pytest
 
-Current test suite: 48 tests passing.
+Current test suite: 54 tests passing.
 
-### SQLite Persistence
+## Architecture
+
+```mermaid
+flowchart TD
+    A[OpenAPI Specification] --> B[Parser]
+    B --> C[Security Analysis]
+
+    C --> D[Authentication Analysis]
+    C --> E[Parameter Analysis]
+    C --> F[Review Signals]
+
+    C --> G[SQLite Persistence]
+    C --> H[Markdown Report]
+
+    I[OpenAPI V1] --> J[API Version Comparison]
+    K[OpenAPI V2] --> J
+
+    J --> L[Added Operations]
+    J --> M[Removed Operations]
+    J --> N[Unchanged Operations]
+
+    J --> O[Comparison Report]
+
+## SQLite Persistence
 
 Analysis results can be stored locally in `attack_surface.db`.
 
-The database currently stores:
+The database stores:
 
 - API endpoints
 - Authentication requirements
@@ -58,17 +73,154 @@ The database currently stores:
 
 Related analysis data is linked to its endpoint using foreign keys.
 
+Endpoint identity is based on the combination of HTTP method and path.
+
+For example:
+
+```text
+GET /users
+DELETE /users
+```
+
+are treated as different API operations.
+
 Parameterized SQL queries are used when inserting and retrieving values.
 
-### Review Signal Limitations
+## Markdown Reports
+
+The project generates Markdown reports containing:
+
+- API summary
+- Endpoint inventory
+- Authentication requirements
+- Parameter metadata
+- Review signals
+- Analysis limitations
+
+The reports distinguish heuristic review signals from confirmed security findings.
+
+## API Version Comparison
+
+The CLI can compare two OpenAPI specifications and classify API operations as:
+
+- Added
+- Removed
+- Unchanged
+
+API operation identity is based on:
+
+```text
+(method, path)
+```
+
+For example:
+
+```text
+V1:
+GET /users
+DELETE /legacy
+
+V2:
+GET /users
+POST /admin/users
+```
+
+The comparison identifies:
+
+```text
+Added:
+POST /admin/users
+
+Removed:
+DELETE /legacy
+
+Unchanged:
+GET /users
+```
+
+New operations are treated as newly introduced attack surface requiring review, not as confirmed vulnerabilities.
+
+## Review Signal Limitations
 
 Review signals are heuristic indicators intended to help prioritize manual security review.
 
-They do not represent confirmed vulnerabilities. A signal such as `admin-surface`, `sensitive-input`, or `destructive-operation` indicates that an endpoint may deserve additional review, but further evidence is required before making a security finding.
+Examples include:
+
+- `user-data`
+- `admin-surface`
+- `authentication-related`
+- `destructive-operation`
+- `sensitive-input`
+
+These signals do not represent confirmed vulnerabilities.
+
+A signal indicates that an endpoint may deserve additional review, but further evidence and authorized testing are required before making a security finding.
+
+The project distinguishes between:
+
+```text
+Observation
+    ↓
+Review Signal / Heuristic
+    ↓
+Confirmed Finding
+```
+
+## Running the CLI
+
+Run the project from the repository root:
+
+```powershell
+python -m src.cli
+```
+
+The CLI provides two modes:
+
+```text
+1. Analyze API
+2. Compare API versions
+```
+
+### Analyze API
+
+This mode analyzes one OpenAPI specification, stores structured results in SQLite, and generates a Markdown attack surface report.
+
+### Compare API Versions
+
+This mode compares an old and new OpenAPI specification and generates a Markdown report showing added, removed, and unchanged API operations.
+
+## Testing
+
+Run the full test suite:
+
+```powershell
+python -m pytest
+```
+
+Current test suite:
+
+```text
+54 tests passing
+```
+
+Tests cover the main parsing, validation, security analysis, persistence, reporting, and API comparison functionality.
+
+## Known Limitations
+
+- OpenAPI documentation may not reflect the application's actual runtime security controls.
+- Missing authentication declarations do not prove that an endpoint is unauthenticated in production.
+- Review signals are heuristic and require manual validation.
+- API version comparison currently focuses on HTTP method and path changes.
+- Changes to request bodies, schemas, authentication requirements, and parameter definitions are not yet included in version comparison.
 
 ## Planned Features
 
 - Export HTML reports
-- Compare two API versions and identify newly introduced attack surface
 - Generate a threat-model worksheet
 - Add HAR file support
+
+## Ethical Use
+
+This project is intended for defensive security, security education, local laboratories, systems you own, and security assessments where you have explicit authorization.
+
+Do not use this project to test systems without permission.

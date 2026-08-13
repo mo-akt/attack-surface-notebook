@@ -68,3 +68,52 @@ def generate_markdown_report(title, version, analysis_results):
 def save_markdown_report(report_text, output_path):
     with open(output_path, "w", encoding="utf-8") as file:
         file.write(report_text)
+
+def generate_comparison_section(comparison_result):
+    lines = []
+
+    added = [
+        f"- {endpoint['method']} {endpoint['path']}"
+        for endpoint in comparison_result.get("added", [])
+    ]
+
+    removed = [
+        f"- {endpoint['method']} {endpoint['path']}"
+        for endpoint in comparison_result.get("removed", [])
+    ]
+
+    unchanged = [
+        f"- {endpoint['method']} {endpoint['path']}"
+        for endpoint in comparison_result.get("unchanged", [])
+    ]
+
+    lines.append("## API Version Comparison")
+    lines.append("")
+
+    lines.append("### Newly Introduced Attack Surface")
+    lines.append("")
+
+    if added:
+        lines.extend(added)
+    else:
+        lines.append("_No new endpoints added._")
+
+    lines.append("")
+    lines.append("### Removed Attack Surface")
+    lines.append("")
+
+    if removed:
+        lines.extend(removed)
+    else:
+        lines.append("_No endpoints were removed._")
+
+    lines.append("")
+    lines.append("### Unchanged Operations")
+    lines.append("")
+
+    if unchanged:
+        lines.extend(unchanged)
+    else:
+        lines.append("_No unchanged endpoints._")
+
+    return "\n".join(lines)

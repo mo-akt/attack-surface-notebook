@@ -5,7 +5,10 @@ from src.database import (
     save_analysis_result,)
 from src.report import (
     generate_markdown_report,
-    save_markdown_report,)
+    save_markdown_report,
+    generate_comparison_section,)
+from src.parser import parse_endpoints
+from src.comparison import compare_api_versions
 
 def load_openapi(path):
     with open(path, 'r', encoding='utf-8') as file:
@@ -33,22 +36,6 @@ def validate_openapi(data):
         
     return True
 
-def parse_endpoints(data):
-    """
-    Extracts all endpoints from OpenAPI data and returns them as a list of dictionaries.
-    Each dictionary contains the HTTP method (uppercase) and the path.
-    """
-    endpoints = []
-    HTTP_METHODS = {"get", "post", "put", "patch", "delete","head", "options", "trace"}
-    for path, methods in data.get("paths", {}).items():
-        for method in methods:
-            if method.lower() in HTTP_METHODS:
-                 endpoints.append({
-                   "method": method.upper(),
-                     "path": path
-                              })
-            
-    return endpoints
 def extract_security_schemes(data):
     schemes = data.get("components", {}).get("securitySchemes")
     
@@ -216,13 +203,46 @@ def build_analysis_results(data):
         })
 
     return results
+def run_comparison_mode():
+    try:
+        old_path = input("Enter old OpenAPI file path: ").strip()
+        new_path = input("Enter new OpenAPI file path: ").strip()
 
-def main():
-    print("Attack Surface Notebook")
-    print("Version: 0.1.0")
+        old_data = load_openapi(old_path)
+        new_data = load_openapi(new_path)
 
-    path = input("Enter OpenAPI file path: ").strip()
+        validate_openapi(old_data)
+        validate_openapi(new_data)
 
+        comparison_result = compare_api_versions(
+            old_data,
+            new_data
+        )
+
+        comparison_markdown = generate_comparison_section(
+            comparison_result
+        )
+
+        save_markdown_report(
+            comparison_markdown,
+            "api_comparison_report.md"
+        )
+
+        print("Comparison report saved to api_comparison_report.md")
+
+    except FileNotFoundError:
+        print("File not found.")
+
+    except json.JSONDecodeError:
+        print("JSON Decode Error.")
+
+    except KeyError as e:
+        print(f"Missing required field: {e}")
+
+    except ValueError as e:
+        print(e)
+
+def run_analysis_mode():
     try:
         data = load_openapi(path)
         validate_openapi(data)
@@ -348,6 +368,24 @@ def main():
 
     except ValueError as e:
         print(e)
+
+
+def main():
+    print("Attack Surface Notebook")
+    print("Version: 0.1.0")
+    print()
+    print("Choose mode:")
+    print("1. Analyze API")
+    print("2. Compare API versions")
+
+    choice = input("Choose mode: ").strip()
+
+    if choice == "1":
+        run_analysis_mode()
+    elif choice == "2":
+        run_comparison_mode()
+    else:
+        print("Invalid choice.")
 
 if __name__ == "__main__":
     main()
